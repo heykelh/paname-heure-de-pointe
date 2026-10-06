@@ -21,7 +21,11 @@ export default {
   'itin.corr': 'Correspondance à {s}', 'itin.corrSub': 'RER {a} > RER {b} : on recommence la phase 1.',
   'itin.dir': 'Direction {d}, {n} station(s)', 'itin.exit': 'Sortie à {s}',
   'itin.exitSans': 'Sans Navigo : contrôleurs aux portiques.', 'itin.exitNavigo': 'Avec Navigo : sortie libre, la foule en plus.',
-
+  
+  'story.title': 'Synopsis', 'story.time': '{h}h{m}',
+  'story': ['{t}. Rendez-vous crucial à {to}. Départ : {from}. Entre vous et votre destin : la foule, les couloirs, et ce monsieur qui sent fort. Gardez votre sérénité.',
+            '{t}. Le réveil n\'a pas sonné. Direction {to}, depuis {from}. Douze millions de Franciliens ont eu la même idée. Une seule règle : ne jamais craquer.',
+            '{t}. On raconte qu\'un voyageur a fait {from} > {to} sans se faire marcher sur le pied. Personne ne l\'a jamais revu. Aujourd\'hui, c\'est votre tour.'],
   'ph1.title': 'Phase 1 — rejoindre le quai', 'ph1.corrTitle': 'Correspondance à {s}',
   'ph1.text': 'Quai direction {d}. ', 'ph1.corrText': 'RER {l}, direction {d}. ',
   'ph1.chatelet': 'Comptez 12 km de couloirs et au moins un accordéon. ', 'ph1.signs': 'Suivez les panneaux. Ou la foule. ',
