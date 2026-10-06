@@ -21,6 +21,10 @@ export default {
   'itin.dir': 'Towards {d}, {n} stop(s)', 'itin.exit': 'Exit at {s}',
   'itin.exitSans': 'No Navigo: inspectors at the gates.', 'itin.exitNavigo': 'With Navigo: free exit, extra crowd.',
 
+  'story.title': 'Synopsis', 'story.time': '{h}:{m} am',
+  'story': ['{t}. Crucial meeting at {to}. Leaving from {from}. Between you and your destiny: the crowd, the corridors, and that guy who smells. Stay calm.',
+            '{t}. The alarm didn\'t ring. Heading to {to}, from {from}. Twelve million Parisians had the same idea. One rule: never crack.',
+            '{t}. Legend says a traveller once made it {from} > {to} without getting his foot stepped on. Nobody ever saw him again. Today, it\'s your turn.'],
   'ph1.title': 'Phase 1 — reach the platform', 'ph1.corrTitle': 'Change at {s}',
   'ph1.text': 'Platform towards {d}. ', 'ph1.corrText': 'RER {l}, towards {d}. ',
   'ph1.chatelet': 'Allow for 12 km of corridors and at least one accordion. ', 'ph1.signs': 'Follow the signs. Or the crowd. ',

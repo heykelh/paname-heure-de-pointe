@@ -50,6 +50,12 @@ export const PAL = {
 };
 export const SP = {};
 export const SKINS = ['#F0C8A0', '#E0A878', '#B87A4A', '#7A4A2A'];
+// Personnages négatifs (ceux qui font perdre de la sérénité) : uniquement les teintes claires
+export const NEG_SKINS = [0, 1];
+// Personnages bienveillants : toutes les teintes
+export const KIND = ['mendiant', 'dame'];
+// Tenues de foule (deb0…deb7) utilisées par les gêneurs : seulement celles à peau claire
+export const LIGHT_DEB = [0, 2, 5, 6];
 export const SKINNED = ['tchipeur', 'voleur', 'shlagg', 'susu', 'frotteur', 'runner', 'artiste', 'mendiant', 'theologiste', 'encombrant', 'poussette', 'controleur', 'dame'];
 export function buildSprites() {
   const K = { K: '#000000' };

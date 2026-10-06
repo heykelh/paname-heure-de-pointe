@@ -9,7 +9,7 @@ import { game } from '../core/state.js';
 import { $, clamp, H, pick, rnd } from '../core/utils.js';
 import { WAVE } from '../data/characters.js';
 import { LINES, ST, computeLegs } from '../data/network.js';
-import { tr } from '../i18n/i18n.js';
+import { fmt, tr } from '../i18n/i18n.js';
 import { input } from '../input.js';
 import { haptic } from '../platform/native.js';
 import { show } from '../ui/screens.js';
@@ -19,7 +19,12 @@ import { buildWagon } from './wagon.js';
 export function newRun() {
   const s = game.sel;
   game.run = { from: s.from, to: s.to, mode: game.mode, legs: computeLegs(s.from, s.to), leg: 0, phase: 1, ser: 100, coins: 0, hero: 0, time: 0, fines: 0, seats: 0 };
-  startPhase(1);
+  // Synopsis : une petite histoire (trop sérieuse) avant la phase 1
+  const h = 7 + Math.floor(Math.random() * 2), m = String(Math.floor(Math.random() * 60)).padStart(2, '0');
+  const stories = tr('story'), story = stories[Math.floor(Math.random() * stories.length)];
+  const text = fmt(story, { t: tr('story.time', { h, m }), from: ST[s.from].n, to: ST[s.to].n });
+  Snd.play('chime');
+  banner(tr('story.title'), text, () => startPhase(1));
 }
 export function mkPlayer(x, y) { return { x, y, r: CFG.player.radius, inv: 0, boost: 0, pardon: 0, seat: null, face: 1 }; }
 
@@ -31,11 +36,12 @@ export function startPhase(n) {
     ents: [], solids: [], decos: [], floats: [], spawnT: 1.2, coinT: 1, itemT: 6,
     finish: null, scroll: 0, shake: 0, beggar: false, esc: false, pl: mkPlayer(180, n === 2 ? 600 : 590), noted: {} };
   const P = game.phase;
-  if (n === 1) {
+  if (n === 1 && !corr) { // on entre dans la gare : les tourniquets
     [[24, 62], [112, 160], [210, 258], [308, 336]].forEach(([a, b]) => P.solids.push({ x: a, y: 520, w: b - a, h: 20, kind: 'tourniquet' }));
     P.decos.push({ kind: 'acces', y: 560 });
   }
-  if (n === 3) { P.decos.push({ kind: 'train', y: 612 }); P.pl.y = 570; }
+  if (n === 1 && corr) { P.decos.push({ kind: 'train', y: 580, line: run.legs[run.leg - 1].line }); P.pl.y = 545; } // correspondance : on descend du train précédent
+  if (n === 3) { P.decos.push({ kind: 'train', y: 580 }); P.pl.y = 545; } // on descend du train
   if (n === 2) buildWagon(leg);
 
   const dir = LINES[leg.line].dir[leg.dir];
@@ -54,7 +60,9 @@ export function startPhase(n) {
   Snd.play('phase');
   banner(title, text);
 }
-export function banner(title, text) {
+// next : ce qui se passe quand on appuie sur le bouton (par défaut, la phase commence)
+export function banner(title, text, next = null) {
+  game.bannerNext = next;
   game.state = 'banner'; $('#bnT').textContent = title; $('#bnP').textContent = text; show('banner');
   setTimeout(() => $('#bnGo').focus(), 50);
 }

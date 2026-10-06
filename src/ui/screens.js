@@ -11,7 +11,7 @@ import { LINES, LINE_ST, ST, computeLegs, linesOf } from '../data/network.js';
 import { newRun, pause, resume, startPlaying, toTitle } from '../game/run.js';
 import { LANGS, applyDom, charFx, charName, getLang, setLang, tr } from '../i18n/i18n.js';
 import { hapticsEnabled, haptic, isNative, platform, quitApp, setHaptics, shareText } from '../platform/native.js';
-import { SKINNED, SKINS, drawEnt } from '../render/sprites.js';
+import { KIND, NEG_SKINS, SKINNED, SKINS, drawEnt } from '../render/sprites.js';
 
 const SCREENS = ['title', 'options', 'people', 'select', 'diff', 'gen', 'banner', 'pause', 'over', 'win'];
 let current = 'title';
@@ -44,7 +44,7 @@ function buildPeople() {
     keys.forEach((k, i) => {
       const row = document.createElement('div'); row.className = 'prow';
       const c = document.createElement('canvas'); c.width = 24; c.height = 24;
-      drawEnt(c.getContext('2d'), { type: k, x: k === 'poussette' ? 20 : 24, y: 28, t: 0, skin: SKINNED.includes(k) ? (i * 3) % SKINS.length : undefined }, 0.3);
+      drawEnt(c.getContext('2d'), { type: k, x: k === 'poussette' ? 20 : 24, y: 28, t: 0, skin: !SKINNED.includes(k) ? undefined : KIND.includes(k) ? (i * 3) % SKINS.length : NEG_SKINS[i % NEG_SKINS.length] }, 0.3);
       const txt = document.createElement('div'); txt.innerHTML = '<b></b><span></span>';
       txt.querySelector('b').textContent = charName(k); txt.querySelector('span').textContent = charFx(k, params(k));
       row.append(c, txt); list.appendChild(row);
@@ -178,7 +178,11 @@ export function initScreens() {
   $('#noBtn').addEventListener('click', () => { Snd.play('tap'); $('#confirm').classList.remove('on'); game.sel.pending = null; });
   document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { Snd.play('select'); game.mode = b.dataset.mode; buildItin(); show('gen'); }));
   $('#startRun').addEventListener('click', () => { Snd.init(); newRun(); });
-  $('#bnGo').addEventListener('click', () => { Snd.init(); startPlaying(); });
+  $('#bnGo').addEventListener('click', () => {
+    Snd.init();
+    const next = game.bannerNext; game.bannerNext = null;
+    if (next) next(); else startPlaying();   // le synopsis enchaîne sur la phase 1
+  });
   $('#retryBtn').addEventListener('click', () => { Snd.play('tap'); newRun(); });
   $('#againBtn').addEventListener('click', () => { Snd.play('tap'); newRun(); });
   $('#shareBtn').addEventListener('click', () => { const text = game.run && game.run.shareText; if (text) shareText(text, t => toast(t || tr('share.copied'))); });

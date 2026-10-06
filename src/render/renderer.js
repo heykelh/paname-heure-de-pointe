@@ -27,7 +27,7 @@ export function drawDecos() {
     const y = B(d.y);
     if (d.kind === 'acces') { ctx.fillStyle = '#5A5C58'; ctx.fillRect(12, y - 4, 156, 3); }
     if (d.kind === 'train') {
-      const lc = LINES[game.run.legs[game.run.leg].line].c;
+      const lc = LINES[d.line || game.run.legs[game.run.leg].line].c;
       ctx.fillStyle = '#E8E4D8'; ctx.fillRect(12, y - 8, 156, 4); ctx.fillStyle = '#F2C230'; ctx.fillRect(12, y - 5, 156, 2);
       ctx.fillStyle = '#000'; ctx.fillRect(0, y - 2, 180, 26);
       ctx.fillStyle = '#ECECE8'; ctx.fillRect(0, y, 180, 22);

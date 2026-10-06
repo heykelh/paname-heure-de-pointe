@@ -12,7 +12,7 @@ export const CFG = {
 
   // Objets
   leaf:   { duration: 8, radius: 6, speedMul: 1.3 },  // Feuille de légèreté
-  pardon: { duration: 5 },                            // étoile d'invincibilité
+  pardon: { duration: 8 },                            // étoile d'invincibilité
 
   // Mode sans Navigo
   fine: 10,                 // amende en pièces

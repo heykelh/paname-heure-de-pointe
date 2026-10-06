@@ -1,5 +1,6 @@
 // ============================================================
-//  SON — tout est synthétisé en direct (WebAudio), aucun fichier.
+//  SON — synthétisé en direct (WebAudio). Des sons enregistrés optionnels
+//  peuvent remplacer n'importe quel bruitage (voir loadSamples plus bas).
 //  Trois bus indépendants : musique, bruitages, ambiance.
 //  - play(nom)       : bruitage ponctuel (voir la liste SFX plus bas)
 //  - hit(type)       : collision avec un personnage (son « signature »)
@@ -16,7 +17,7 @@ const rand = (a, b) => a + Math.random() * (b - a);
 export const Snd = {
   ac: null,
   on: { music: store.get('music', true), sfx: store.get('sfx', true), amb: store.get('amb', true) },
-  trackName: 'menu', ovr: null, paused: false, mode: 'none',
+  trackName: 'menu', ovr: null, paused: false, mode: 'none', samples: {},
   _step: 0, _next: 0, _timer: null,
   st: { stepT: 0, beatT: 0, clackT: 0, trainT: 8, tenseT: 0, crowd: 0 },
 
@@ -51,6 +52,30 @@ export const Snd = {
     const s = ac.createBufferSource(); s.buffer = ac.createBuffer(1, 1, 22050); s.connect(ac.destination); s.start(0);
     this._timer = setInterval(() => this._sched(), 25);
     this._next = ac.currentTime + .1;
+    this.loadSamples();
+  },
+
+  /* ---------- sons enregistrés (optionnels) ----------
+     Déposez un fichier .mp3 dans public/sounds/ et ajoutez son nom dans public/sounds/index.json :
+     il remplace alors le son synthétisé. Exemples de noms : "hit-tchipeur", "hit-shlagg", "coin", "star". */
+  async loadSamples() {
+    try {
+      const r = await fetch('./sounds/index.json');
+      if (!r.ok) return;
+      const names = await r.json();
+      for (const n of names) {
+        try {
+          const f = await fetch(`./sounds/${n}.mp3`);
+          if (f.ok) this.samples[n] = await this.ac.decodeAudioData(await f.arrayBuffer());
+        } catch (e) { /* fichier absent ou illisible : on garde le son synthétisé */ }
+      }
+    } catch (e) { /* pas de dossier sounds : tout est synthétisé */ }
+  },
+  sample(name, vol = 1) {
+    const b = this.samples[name]; if (!b || !this.ac) return false;
+    const s = this.ac.createBufferSource(), g = this.ac.createGain();
+    s.buffer = b; s.playbackRate.value = rand(.96, 1.04); g.gain.value = vol;
+    s.connect(g); g.connect(this.sfxBus); s.start(); return true;
   },
   resume() { if (this.ac && this.ac.state !== 'running') this.ac.resume(); },
   suspend() { if (this.ac && this.ac.state === 'running') this.ac.suspend(); },
@@ -99,6 +124,7 @@ export const Snd = {
   /* ---------- bruitages ---------- */
   play(name) {
     if (!this.ac) return;
+    if (this.sample(name)) return;
     const r = rand(.94, 1.06);
     switch (name) {
       case 'tap': this.tone(1046 * r, .05, { vol: .06 }); break;
@@ -133,25 +159,58 @@ export const Snd = {
       case 'aura': this.acc(rand(300, 420), .5, 0, .02); break;
     }
   },
-  // collision : un choc sourd + la « signature » du personnage
+  // « tchiiip » : petit claquement de langue, puis l'air aspiré entre les dents
+  tchip(r = 1) {
+    const ac = this.ac;
+    this.noise(.012, { ftype: 'highpass', f: 3000, vol: .4 });          // claquement
+    this.noise(.05, { f: 2300 * r, q: 2, vol: .35, at: .01 });          // « tch »
+    const t = ac.currentTime + .05, s = ac.createBufferSource(), f = ac.createBiquadFilter(), f2 = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = this.white; f.type = 'bandpass'; f.Q.value = 12;
+    f.frequency.setValueAtTime(2800 * r, t); f.frequency.linearRampToValueAtTime(3900 * r, t + .34);   // « iiip » qui monte
+    f2.type = 'highpass'; f2.frequency.value = 1500;
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(1.6, t + .07); g.gain.setValueAtTime(1.6, t + .28); g.gain.exponentialRampToValueAtTime(.0001, t + .38);
+    s.connect(f); f.connect(f2); f2.connect(g); g.connect(this.sfxBus); s.start(t, Math.random()); s.stop(t + .42);
+    this.tone(3000 * r, .3, { type: 'sine', vol: .03, slide: 3700 * r, at: .08, attack: .06 });   // léger sifflement
+  },
+  // collision : un petit choc + le bruitage « signature » (et drôle) du personnage
   hit(type) {
     if (!this.ac) return;
+    if (this.sample('hit-' + type)) return;
     const r = rand(.92, 1.08);
-    this.tone(150 * r, .14, { vol: .13, slide: 70 }); this.noise(.09, { f: 500, vol: .22 });
+    this.tone(150 * r, .1, { vol: .08, slide: 80 }); this.noise(.06, { f: 500, vol: .14 });
     switch (type) {
-      case 'tchipeur': this.noise(.2, { f: 3300 * r, q: 7, vol: .5, at: .03, to: 2600 }); break;
-      case 'shlagg': this.tone(140 * r, .45, { type: 'sawtooth', vol: .07, vib: [9, 25], lp: 700, at: .05 }); this.noise(.3, { f: 300, vol: .12, at: .05 }); break;
-      case 'susu': this.tone(1200 * r, .15, { type: 'sine', vol: .14, slide: 300 }); this.noise(.12, { f: 2500, q: .8, vol: .1, at: .1 }); break;
-      case 'frotteur': this.tone(700 * r, .35, { type: 'sawtooth', vol: .06, slide: 220, lp: 1500 }); break;
-      case 'theologiste': for (let i = 0; i < 4; i++) this.tone(rand(160, 230), .1, { type: 'triangle', vol: .1, at: .05 + i * .11, lp: 800 }); break;
-      case 'voleur': this.play('steal'); break;
-      case 'artiste': [233, 262, 277].forEach(f => this.acc(f * r, .4, .03, .03)); break;
-      case 'enfant': [660, 784, 988, 1175].forEach((f, i) => this.tone(f * r, .06, { vol: .06, at: .04 + i * .06 })); break;
-      case 'poussette': this.tone(1500 * r, .3, { type: 'sine', vol: .07, vib: [18, 120], at: .03 }); break;
-      case 'encombrant': this.noise(.35, { ftype: 'lowpass', f: 250, vol: .3, brown: true }); for (let i = 0; i < 5; i++) this.noise(.03, { f: 900, vol: .08, at: .1 + i * .05 }); break;
-      case 'runner': this.noise(.35, { f: 400, to: 2500, q: 1, vol: .22 }); break;
-      case 'rambarde': this.tone(1840, .5, { type: 'sine', vol: .08 }); this.tone(2770, .35, { type: 'sine', vol: .04 }); this.noise(.12, { f: 900, q: 3, vol: .1, at: .08 }); break;
-      case 'debout': this.tone(220 * r, .12, { type: 'triangle', vol: .08, slide: 170 }); break;
+      case 'basique': // « oh, pardon ! »
+        this.tone(620 * r, .12, { type: 'triangle', vol: .14, slide: 520, at: .03 }); this.tone(470 * r, .22, { type: 'triangle', vol: .14, slide: 400, at: .16 }); break;
+      case 'tchipeur': this.tchip(r); break;
+      case 'shlagg': // un rot bien gras
+        this.tone(170 * r, .55, { type: 'sawtooth', vol: .1, slide: 75, vib: [22, 30], lp: 600, at: .03 }); this.noise(.5, { ftype: 'lowpass', f: 380, vol: .22, brown: true, at: .03 }); break;
+      case 'frotteur': // rire de vilain « hé hé hé » + sifflet qui monte
+        for (let i = 0; i < 3; i++) this.tone(270 * r, .09, { type: 'square', vol: .05, slide: 220, lp: 1200, at: .04 + i * .13 });
+        this.tone(500, .4, { type: 'sine', vol: .08, slide: 1500, at: .45 }); break;
+      case 'susu': // « splotch » + gouttes
+        this.noise(.18, { ftype: 'lowpass', f: 700, vol: .32, brown: true }); [900, 1300, 1700].forEach((f, i) => this.tone(f * r, .06, { type: 'sine', vol: .11, slide: f * 1.6, at: .14 + i * .09 })); break;
+      case 'theologiste': // sermon « bla bla bla » + cloche
+        for (let i = 0; i < 5; i++) this.tone(rand(150, 240), .09, { type: 'triangle', vol: .11, at: .03 + i * .1, lp: 900, slide: rand(120, 200) });
+        this.tone(880, .9, { type: 'sine', vol: .07, at: .58 }); this.tone(1777, .5, { type: 'sine', vol: .02, at: .58 }); break;
+      case 'voleur': // « zwip ! » + la pièce qui file
+        this.noise(.2, { f: 600, to: 6000, q: 2, vol: .28 }); this.tone(400, .18, { vol: .05, slide: 1600 });
+        [1319, 988, 784, 523].forEach((f, i) => this.tone(f, .06, { vol: .05, at: .22 + i * .06 })); break;
+      case 'artiste': // fausse note d'accordéon
+        [262, 277, 311, 233].forEach((f, i) => this.acc(f * r, .22, .03 + i * .08, .03)); this.acc(185, .6, .36, .03); break;
+      case 'enfant': // « hihihi »
+        for (let i = 0; i < 5; i++) this.tone((1400 - i * 90) * r, .07, { vol: .05, at: .03 + i * .08, vib: [30, 60] }); break;
+      case 'poussette': // roue qui grince + « ouinnn »
+        this.tone(1600 * r, .25, { type: 'sine', vol: .06, vib: [22, 150] }); this.tone(480, .6, { type: 'sawtooth', vol: .05, at: .22, slide: 380, vib: [7, 40], lp: 1600 }); break;
+      case 'encombrant': // valise qui roule + « ouf »
+        for (let i = 0; i < 6; i++) this.noise(.03, { f: 1000, vol: .1, at: i * .045 });
+        this.noise(.3, { ftype: 'lowpass', f: 220, vol: .35, brown: true, at: .27 }); this.tone(200, .2, { type: 'triangle', vol: .1, slide: 120, at: .29 }); break;
+      case 'runner': // « vroum » de dessin animé
+        this.noise(.3, { f: 300, to: 3000, q: 1.2, vol: .25 }); for (let i = 0; i < 4; i++) this.noise(.03, { ftype: 'highpass', f: 2500, vol: .08, at: .05 + i * .05 });
+        this.tone(300, .3, { vol: .04, slide: 900, at: .05 }); break;
+      case 'rambarde': // « boïng » métallique + microbes
+        this.tone(220, .5, { type: 'triangle', vol: .14, slide: 440, vib: [14, 25] }); this.tone(1840, .4, { type: 'sine', vol: .05 }); this.noise(.12, { f: 900, q: 3, vol: .1, at: .22 }); break;
+      case 'debout': // « hmpf »
+        this.tone(200 * r, .14, { type: 'triangle', vol: .09, slide: 160 }); this.noise(.08, { ftype: 'lowpass', f: 500, vol: .1 }); break;
       default: this.tone(260 * r, .1, { type: 'triangle', vol: .08, slide: 200, at: .03 });
     }
   },

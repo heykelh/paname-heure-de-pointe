@@ -43,4 +43,4 @@ if (!isNative && 'serviceWorker' in navigator && import.meta.env.PROD) {
 
 // Mode test : ouvrez le jeu avec ?debug à la fin de l'adresse pour manipuler l'état dans la console
 // (ex. game.run.ser = 100, game.phase.prog = game.phase.len pour sauter à la fin d'une phase)
-if (new URLSearchParams(location.search).has('debug')) window.game = game;
+if (new URLSearchParams(location.search).has('debug')) { window.game = game; window.Snd = Snd; } // ex. Snd.hit('tchipeur'), Snd.play('star')

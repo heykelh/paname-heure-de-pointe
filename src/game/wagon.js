@@ -12,6 +12,7 @@ import { input } from '../input.js';
 import { haptic } from '../platform/native.js';
 import { addEnt, float, hurt } from './entities.js';
 import { phaseDone } from './run.js';
+import { LIGHT_DEB } from '../render/sprites.js';
 
 export const DOORS = [92, 300, 520]; // position des portes (y logique)
 
@@ -39,7 +40,7 @@ function freeSpot(minD) {
   }
   return null;
 }
-function addStander(x, y) { const e = addEnt('debout', x, y); e.v = Math.floor(Math.random() * 8); e.ph = rnd(0, 6); return e; }
+function addStander(x, y) { const e = addEnt('debout', x, y); e.v = LIGHT_DEB[Math.floor(Math.random() * LIGHT_DEB.length)]; e.ph = rnd(0, 6); return e; }
 
 export function buildWagon(leg) {
   const P = game.phase, C = CFG.wagon;

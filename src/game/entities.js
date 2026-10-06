@@ -9,15 +9,18 @@ import { T, WAVE } from '../data/characters.js';
 import { DSHORT, LINES } from '../data/network.js';
 import { charName, charNote, tr } from '../i18n/i18n.js';
 import { haptic } from '../platform/native.js';
-import { SKINNED, SKINS } from '../render/sprites.js';
+import { KIND, LIGHT_DEB, NEG_SKINS, SKINNED, SKINS } from '../render/sprites.js';
 import { gameOver } from './run.js';
 
 export function addEnt(type, x, y) {
   const D = T[type], e = { type, x, y, vx: 0, vy: 0, r: D.r, t: Math.random() * 3, k: 0, cd: 0 };
   if (D.beh === 'walk') { e.vy = Math.random() < .62 ? rnd(22, 46) : -rnd(14, 30); e.vx = rnd(-8, 8); }
   if (D.beh === 'runner') { e.armed = false; e.y = HUD + 22; e.t = 0; Snd.play('runnerWarn'); }
-  if (type === 'basique') e.v = Math.floor(Math.random() * 8);          // tenue au hasard
-  if (SKINNED.includes(type)) e.skin = Math.floor(Math.random() * SKINS.length); // couleur de peau au hasard
+  const any = list => list[Math.floor(Math.random() * list.length)];
+  if (type === 'basique') e.v = any(LIGHT_DEB);                    // tenue au hasard (gêneur : peau claire)
+  if (SKINNED.includes(type)) e.skin = KIND.includes(type)
+    ? Math.floor(Math.random() * SKINS.length)                      // personnages bienveillants : toutes les teintes
+    : any(NEG_SKINS);                                                // personnages négatifs : teintes claires uniquement
   if (D.beh === 'ctrl') { e.ang = Math.PI / 2; e.sw = rnd(.7, 1.2); e.ph = rnd(0, 6); }
   game.phase.ents.push(e); return e;
 }
