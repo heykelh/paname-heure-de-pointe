@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0E1530">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Paname Heure de Pointe — survivez aux heures de pointe du RER parisien.">
+<title>Paname Heure de Pointe</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+</head>
+<body>
+<div id="app">
+ <div id="stage">
+  <canvas id="cv" width="180" height="320" aria-label="Paname Heure de Pointe"></canvas>
+  <button id="pauseBtn" data-i18n-aria="pause.title">II</button>
+
+  <section class="screen on" id="s-title">
+    <div class="top bricks">
+      <div class="logo"><div class="l1">PANAME</div><div class="l2" data-i18n="title.sub"></div></div>
+    </div>
+    <div class="ledge blocks"></div>
+    <div class="menu stack">
+      <button class="btn go" data-go="select" data-i18n="menu.play"></button>
+      <button class="btn" data-go="people" data-i18n="menu.people"></button>
+      <button class="btn" data-go="options" data-i18n="menu.options"></button>
+      <button class="btn" id="quitBtn" data-i18n="menu.quit"></button>
+    </div>
+    <div class="copy">© 2026 HYKE <span class="blink" data-i18n="menu.version"></span></div>
+  </section>
+
+  <section class="screen page" id="s-options">
+    <h2 data-i18n="opt.title"></h2>
+    <div class="box">
+      <div class="toggle"><span data-i18n="opt.lang"></span><div id="optLang"></div></div>
+      <div class="toggle"><span data-i18n="opt.music"></span><button class="switch" role="switch" id="optMusic" data-i18n-aria="opt.music"></button></div>
+      <div class="toggle"><span data-i18n="opt.sfx"></span><button class="switch" role="switch" id="optSfx" data-i18n-aria="opt.sfx"></button></div>
+      <div class="toggle"><span data-i18n="opt.amb"></span><button class="switch" role="switch" id="optAmb" data-i18n-aria="opt.amb"></button></div>
+      <div class="toggle"><span data-i18n="opt.haptics"></span><button class="switch" role="switch" id="optHaptics" data-i18n-aria="opt.haptics"></button></div>
+    </div>
+    <div class="warn" id="soundWarn"></div>
+    <div class="box"><p><span class="y" data-i18n="opt.controls.t"></span><br><span data-i18n="opt.controls"></span></p></div>
+    <div class="foot"><button class="btn" data-go="title" data-i18n="common.back"></button></div>
+  </section>
+
+  <section class="screen page" id="s-people">
+    <h2 data-i18n="people.title"></h2>
+    <div class="people" id="peopleList"></div>
+    <div class="foot"><button class="btn" data-go="title" data-i18n="common.back"></button></div>
+  </section>
+
+  <section class="screen" id="s-select">
+    <div class="head page" style="padding-bottom:4px"><h2 id="selTitle"></h2><p id="selSub" class="sub"></p></div>
+    <svg id="map" viewBox="0 0 362 306" role="group" aria-label="RER A B C D E"></svg>
+    <div class="tabs" id="lineTabs" role="group"></div>
+    <p class="linename" id="lineName"></p>
+    <div class="stlist" id="stList"></div>
+    <div class="pad" style="margin-top:auto"><button class="btn quiet" data-go="title" data-i18n="common.backMenu"></button></div>
+    <div class="box" id="confirm">
+      <div class="q" id="confirmQ"></div>
+      <div class="row"><button class="btn go" id="yesBtn" data-i18n="common.yes"></button><button class="btn" id="noBtn" data-i18n="common.no"></button></div>
+    </div>
+  </section>
+
+  <section class="screen page" id="s-diff">
+    <h2 data-i18n="diff.title"></h2>
+    <div class="stack">
+      <button class="choice" data-mode="navigo"><b data-i18n="diff.navigo"></b><span data-i18n="diff.navigoD"></span></button>
+      <button class="choice hard" data-mode="sans"><b data-i18n="diff.sans"></b><span id="diffSans" data-i18n="diff.sansD"></span></button>
+    </div>
+    <div class="foot"><button class="btn quiet" data-go="select" data-i18n="diff.change"></button></div>
+  </section>
+
+  <section class="screen page" id="s-gen">
+    <h2 data-i18n="gen.title"></h2>
+    <div class="box"><ul class="itin" id="itin"></ul></div>
+    <div class="foot stack"><button class="btn go" id="startRun" data-i18n="gen.start"></button><button class="btn quiet" data-go="select" data-i18n="diff.change"></button></div>
+  </section>
+
+  <section class="screen overlay" id="s-banner">
+    <div class="box"><h3 id="bnT"></h3><p id="bnP"></p><button class="btn go" id="bnGo" data-i18n="common.go"></button></div>
+  </section>
+
+  <section class="screen overlay" id="s-pause">
+    <div class="box"><h3 data-i18n="pause.title"></h3><p data-i18n="pause.text"></p>
+      <div class="stack"><button class="btn go" id="resumeBtn" data-i18n="pause.resume"></button><button class="btn quiet" id="pauseMenu" data-i18n="pause.quit"></button></div></div>
+  </section>
+
+  <section class="screen page" id="s-over">
+    <div class="go-title">GAME<br>OVER</div>
+    <h2 id="ovT"></h2>
+    <p id="ovP"></p>
+    <div class="foot stack"><button class="btn go" id="retryBtn" data-i18n="over.retry"></button><button class="btn quiet" data-go="title" data-i18n="common.mainMenu"></button></div>
+  </section>
+
+  <section class="screen page" id="s-win">
+    <div class="box ticket">
+      <div class="stamp" id="wStamp"></div>
+      <div class="kicker" data-i18n="win.kicker"></div>
+      <h2 id="wT"></h2>
+      <dl id="wStats"></dl>
+    </div>
+    <div class="stack">
+      <button class="btn go" id="shareBtn" data-i18n="win.share"></button>
+      <button class="btn" id="againBtn" data-i18n="win.again"></button>
+      <button class="btn quiet" data-go="title" data-i18n="common.mainMenu"></button>
+    </div>
+  </section>
+
+  <div id="toast" role="status"></div>
+ </div>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

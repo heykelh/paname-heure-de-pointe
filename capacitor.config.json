@@ -1,0 +1,8 @@
+{
+  "appId": "com.hyke.panameheuredepointe",
+  "appName": "Paname Heure de Pointe",
+  "webDir": "dist",
+  "backgroundColor": "#0E1530",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "never" }
+}

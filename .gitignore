@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+# les dossiers android/ et ios/ SONT versionnés (ils contiennent vos réglages natifs)

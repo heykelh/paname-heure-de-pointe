@@ -1,0 +1,10 @@
+# Sécurité de la chaîne d'approvisionnement
+# Refuse toute version publiée il y a moins de 7 jours (le temps que les paquets piégés soient détectés)
+minimumReleaseAge: 10080
+# Refuse d'exécuter les scripts d'installation des paquets sans autorisation explicite
+strictDepBuilds: true
+# Refuse les sous-dépendances venant d'ailleurs que du registre (Git, URL…)
+blockExoticSubdeps: true
+# Décisions sur les scripts d'installation : esbuild n'en a pas besoin, on refuse
+allowBuilds:
+  esbuild: false

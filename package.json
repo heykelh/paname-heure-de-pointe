@@ -1,0 +1,30 @@
+{
+  "name": "paname-heure-de-pointe",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "description": "Paname Heure de Pointe — jeu rétro sur les heures de pointe du RER parisien",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "android": "vite build && cap sync android && cap open android",
+    "ios": "vite build && cap sync ios && cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "7.6.9",
+    "@capacitor/app": "7.1.2",
+    "@capacitor/core": "7.6.9",
+    "@capacitor/haptics": "7.0.5",
+    "@capacitor/ios": "7.6.9",
+    "@capacitor/screen-orientation": "7.0.4",
+    "@capacitor/share": "7.0.4",
+    "@capacitor/status-bar": "7.0.6",
+    "@fontsource/press-start-2p": "5.3.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "7.6.9",
+    "vite": "6.4.3"
+  },
+  "packageManager": "pnpm@11.27.1"
+}
