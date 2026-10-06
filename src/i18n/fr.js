@@ -2,7 +2,7 @@
 // Les {variables} entre accolades sont remplacées automatiquement.
 export default {
   'title.sub': 'HEURE DE POINTE',
-  'menu.play': 'Jouer', 'menu.people': 'Les gens du métro', 'menu.options': 'Options', 'menu.quit': 'Quitter', 'menu.version': 'DÉMO V0.6',
+  'menu.play': 'Jouer', 'menu.people': 'Les gens du métro', 'menu.options': 'Options', 'menu.quit': 'Quitter', 'menu.version': 'DÉMO V0.7',
   'common.back': 'Retour', 'common.backMenu': 'Retour au menu', 'common.mainMenu': 'Menu principal', 'common.yes': 'Oui', 'common.no': 'Non', 'common.go': 'C\'est parti',
   'quit.toast': 'Dans l\'application mobile, ce bouton ferme le jeu.',
 
