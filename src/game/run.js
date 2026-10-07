@@ -74,11 +74,12 @@ export function startPlaying() {
 export function phaseDone() {
   game.state = 'trans'; input.tgt = null; input.drag = false;
   const run = game.run, n = game.phase.kind;
-  if (n === 1) return startPhase(2);
+  if (n === 1) { Snd.play('quai'); return startPhase(2); }   // le train entre en gare
   if (n === 2) {
     if (run.leg < run.legs.length - 1) { run.leg++; return startPhase(1); }
     return startPhase(3);
   }
+  Snd.play('sortie');   // l'air libre !
   win();
 }
 

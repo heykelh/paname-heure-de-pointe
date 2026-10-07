@@ -1,10 +1,10 @@
 // ============================================================
-//  SON — synthétisé en direct (WebAudio). Des sons enregistrés optionnels
-//  peuvent remplacer n'importe quel bruitage (voir loadSamples plus bas).
+//  SON — synthétisé en direct (WebAudio). Tes propres fichiers audio
+//  peuvent remplacer n'importe quel son ou musique : voir loadSamples.
 //  Trois bus indépendants : musique, bruitages, ambiance.
-//  - play(nom)       : bruitage ponctuel (voir la liste SFX plus bas)
+//  - play(nom)       : bruitage ponctuel (voir la liste plus bas)
 //  - hit(type)       : collision avec un personnage (son « signature »)
-//  - music(piste)    : change la musique ('menu', 'corridor', 'wagon', 'exit')
+//  - music(piste)    : change la musique ('menu', 'corridor', 'wagon', 'exit', 'none')
 //  - override(piste, s) : musique temporaire (ex. 'star' pendant le Pardon)
 //  - ambience(mode)  : fond sonore ('menu', 'corridor', 'wagon', 'none')
 //  - frame(dt, ctx)  : appelé à chaque image, adapte l'ambiance à la situation
@@ -17,7 +17,7 @@ const rand = (a, b) => a + Math.random() * (b - a);
 export const Snd = {
   ac: null,
   on: { music: store.get('music', true), sfx: store.get('sfx', true), amb: store.get('amb', true) },
-  trackName: 'menu', ovr: null, paused: false, mode: 'none', samples: {},
+  trackName: 'menu', ovr: null, paused: false, mode: 'none', samples: {}, fileMusic: null,
   _step: 0, _next: 0, _timer: null,
   st: { stepT: 0, beatT: 0, clackT: 0, trainT: 8, tenseT: 0, crowd: 0 },
 
@@ -55,26 +55,46 @@ export const Snd = {
     this.loadSamples();
   },
 
-  /* ---------- sons enregistrés (optionnels) ----------
-     Déposez un fichier .mp3 dans public/sounds/ et ajoutez son nom dans public/sounds/index.json :
-     il remplace alors le son synthétisé. Exemples de noms : "hit-tchipeur", "hit-shlagg", "coin", "star". */
+  /* ---------- tes propres fichiers audio (optionnels) ----------
+     1. Mets le fichier dans public/sounds/ (mp3 conseillé : lu partout, iPhone compris).
+     2. Ajoute son nom dans public/sounds/index.json, par ex. ["hit-tchipeur", "music-menu"].
+        Sans extension, le jeu cherche « nom.mp3 » ; tu peux aussi écrire « nom.ogg » ou « nom.wav ».
+     Noms reconnus :
+       hit-basique, hit-tchipeur, hit-shlagg, hit-frotteur, hit-susu, hit-theologiste, hit-voleur,
+       hit-artiste, hit-enfant, hit-poussette, hit-encombrant, hit-runner, hit-rambarde, hit-debout
+         → collision avec ce personnage. Variantes possibles : hit-tchipeur-2, hit-tchipeur-3…
+           (le jeu en tire une au hasard à chaque collision)
+       music-menu, music-corridor, music-wagon, music-exit, music-star
+         → musique en boucle (écran titre, couloirs, wagon, sortie, étoile Pardon)
+       quai, sortie → arrivée sur le quai / à la sortie
+       et tous les bruitages de play() : coin, star, shrink, grow, hero, fine, seat, brake, chime,
+         doorsOpen, doorsClose, navigo, turnstile, jump, crowdOh, win, over…
+     Tout son absent garde sa version synthétisée. */
   async loadSamples() {
     try {
-      const r = await fetch('./sounds/index.json');
+      const r = await fetch('./sounds/index.json', { cache: 'no-cache' });
       if (!r.ok) return;
       const names = await r.json();
-      for (const n of names) {
+      await Promise.all(names.map(async entry => {
+        const file = /\.(mp3|ogg|wav|m4a)$/i.test(entry) ? entry : entry + '.mp3';
+        const name = file.replace(/\.[^.]+$/, '');
         try {
-          const f = await fetch(`./sounds/${n}.mp3`);
-          if (f.ok) this.samples[n] = await this.ac.decodeAudioData(await f.arrayBuffer());
-        } catch (e) { /* fichier absent ou illisible : on garde le son synthétisé */ }
-      }
+          const f = await fetch('./sounds/' + file);
+          if (f.ok) this.samples[name] = await this.ac.decodeAudioData(await f.arrayBuffer());
+        } catch (e) { console.warn('Son illisible, version synthétisée gardée :', file); }
+      }));
+      this._applyMusic();   // une musique en fichier est peut-être arrivée pour la piste en cours
     } catch (e) { /* pas de dossier sounds : tout est synthétisé */ }
   },
+  // Joue un fichier (ou une de ses variantes nom-2, nom-3…). Renvoie false s'il n'existe pas.
   sample(name, vol = 1) {
-    const b = this.samples[name]; if (!b || !this.ac) return false;
+    if (!this.ac) return false;
+    const variants = [name];
+    for (let i = 2; this.samples[name + '-' + i]; i++) variants.push(name + '-' + i);
+    const b = this.samples[variants[Math.floor(Math.random() * variants.length)]];
+    if (!b) return false;
     const s = this.ac.createBufferSource(), g = this.ac.createGain();
-    s.buffer = b; s.playbackRate.value = rand(.96, 1.04); g.gain.value = vol;
+    s.buffer = b; s.playbackRate.value = rand(.97, 1.03); g.gain.value = vol;
     s.connect(g); g.connect(this.sfxBus); s.start(); return true;
   },
   resume() { if (this.ac && this.ac.state !== 'running') this.ac.resume(); },
@@ -152,6 +172,20 @@ export const Snd = {
       case 'coo': this.tone(430 * r, .12, { type: 'sine', vol: .12, slide: 360 }); this.tone(390 * r, .18, { type: 'sine', vol: .12, slide: 330, at: .14 }); break;
       case 'flap': for (let i = 0; i < 6; i++) this.noise(.05, { f: 1500, q: .7, vol: .12, at: i * .05 }); break;
       case 'phase': this.noise(.5, { f: 400, to: 3000, q: .8, vol: .1 }); [523, 659, 784].forEach((f, i) => this.tone(f, .3, { type: 'triangle', vol: .1, at: .2 + i * .06 })); break;
+      // Arrivée sur le quai : le train entre en gare (grondement qui monte, crissement de freins, souffle des portes)
+      case 'quai':
+        this.duck(.35, 2.2);
+        this.noise(1.6, { ftype: 'lowpass', f: 120, to: 420, vol: .45, brown: true, attack: .6 });
+        this.noise(1.2, { f: 1800, to: 900, q: 2, vol: .06, attack: .5 });
+        this.tone(2400, .7, { type: 'sawtooth', vol: .03, slide: 1900, vib: [12, 50], lp: 4000, at: 1.1 });
+        this.noise(.5, { ftype: 'highpass', f: 2000, vol: .16, at: 1.75, attack: .03 });
+        [659, 784, 1047].forEach((f, i) => this.tone(f, .3, { type: 'triangle', vol: .1, at: 1.9 + i * .08 }));
+        break;
+      // Arrivée à la sortie : la foule s'éloigne, l'air libre et les oiseaux (le jingle de victoire suit)
+      case 'sortie':
+        this.noise(1.2, { f: 700, to: 300, q: .8, vol: .1, attack: .05 });
+        for (let i = 0; i < 5; i++) { const f = rand(2800, 3600), at = .3 + i * .22; this.tone(f, .08, { type: 'sine', vol: .07, slide: f * 1.25, at }); this.tone(f * 1.1, .06, { type: 'sine', vol: .05, slide: f * .9, at: at + .09 }); }
+        break;
       case 'win': this.music('none'); [523, 659, 784, 659, 784, 1047, 1047].forEach((f, i) => { this.tone(f, .22, { type: 'square', vol: .07, at: i * .13 }); this.tone(f / 2, .22, { type: 'triangle', vol: .14, at: i * .13 }); }); break;
       case 'over': this.music('none'); [392, 370, 349, 330, 262].forEach((f, i) => this.tone(f, .38, { type: 'sawtooth', vol: .06, at: i * .25, lp: 1800 })); this.tone(120, .8, { type: 'sine', vol: .2, slide: 50, at: 1.2 }); break;
       case 'pause': this.tone(660, .08, { vol: .07 }); this.tone(440, .12, { vol: .07, at: .08 }); break;
@@ -179,7 +213,7 @@ export const Snd = {
   // collision : un petit choc + le bruitage « signature » (et drôle) du personnage
   hit(type) {
     if (!this.ac) return;
-    if (this.sample('hit-' + type)) return;
+    if (this.sample('hit-' + type)) return;   // ton fichier hit-<personnage>.mp3 s'il existe
     const r = rand(.92, 1.08);
     this.tone(150 * r, .1, { vol: .08, slide: 80 }); this.noise(.06, { f: 500, vol: .14 });
     switch (type) {
@@ -219,14 +253,30 @@ export const Snd = {
     }
   },
 
-  /* ---------- musique ---------- */
-  music(name) { if (name === this.trackName) return; this.trackName = name; this._step = 0; if (this.ac) this._next = this.ac.currentTime + .08; },
-  override(name, sec) { if (!this.ac) return; this.ovr = { name, until: this.ac.currentTime + sec }; this._step = 0; },
+  /* ---------- musique ----------
+     Si un fichier music-<piste> existe, il est joué en boucle ; sinon la piste chiptune de tracks.js. */
+  music(name) { if (name === this.trackName) return; this.trackName = name; this._step = 0; if (this.ac) this._next = this.ac.currentTime + .08; this._applyMusic(); },
+  override(name, sec) { if (!this.ac) return; this.ovr = { name, until: this.ac.currentTime + sec }; this._step = 0; this._applyMusic(); },
+  _current() { return this.ovr ? this.ovr.name : this.trackName; },
+  // lance / arrête le fichier musical qui correspond à la piste en cours
+  _applyMusic() {
+    if (!this.ac) return;
+    const name = this._current(), buf = this.samples['music-' + name], fm = this.fileMusic, t = this.ac.currentTime;
+    if (fm && fm.name === name && buf) return;          // déjà en train de jouer
+    if (fm) { fm.g.gain.setTargetAtTime(.0001, t, .15); fm.src.stop(t + .8); this.fileMusic = null; }
+    if (!buf) return;
+    const src = this.ac.createBufferSource(), g = this.ac.createGain();
+    src.buffer = buf; src.loop = true;
+    g.gain.setValueAtTime(.0001, t); g.gain.setTargetAtTime(1.6, t, .2);   // 1.6 : compense le volume plus bas du bus musique
+    src.connect(g); g.connect(this.musicIn); src.start(t);
+    this.fileMusic = { name, src, g };
+  },
   _sched() {
     if (!this.ac || this.paused || this.ac.state !== 'running') return;
     const now = this.ac.currentTime;
-    if (this.ovr && now > this.ovr.until) { this.ovr = null; this._step = 0; }
-    const tr = TRACKS[this.ovr ? this.ovr.name : this.trackName];
+    if (this.ovr && now > this.ovr.until) { this.ovr = null; this._step = 0; this._applyMusic(); }
+    if (this.fileMusic) return;                          // un fichier joue : pas de chiptune par-dessus
+    const tr = TRACKS[this._current()];
     if (this._next < now) this._next = now + .02;
     if (!tr) return;
     const stepDur = 60 / tr.bpm / 2; // croches
