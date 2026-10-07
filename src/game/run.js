@@ -15,6 +15,7 @@ import { haptic } from '../platform/native.js';
 import { show } from '../ui/screens.js';
 import { addEnt } from './entities.js';
 import { buildWagon } from './wagon.js';
+import { buildGates } from './gates.js';
 
 export function newRun() {
   const s = game.sel;
@@ -37,7 +38,7 @@ export function startPhase(n) {
     finish: null, scroll: 0, shake: 0, beggar: false, esc: false, pl: mkPlayer(180, n === 2 ? 600 : 590), noted: {} };
   const P = game.phase;
   if (n === 1 && !corr) { // on entre dans la gare : les tourniquets
-    [[24, 62], [112, 160], [210, 258], [308, 336]].forEach(([a, b]) => P.solids.push({ x: a, y: 520, w: b - a, h: 20, kind: 'tourniquet' }));
+    buildGates(520, run.mode === 'sans');
     P.decos.push({ kind: 'acces', y: 560 });
   }
   if (n === 1 && corr) { P.decos.push({ kind: 'train', y: 580, line: run.legs[run.leg - 1].line }); P.pl.y = 545; } // correspondance : on descend du train précédent

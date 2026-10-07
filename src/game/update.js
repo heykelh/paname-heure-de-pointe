@@ -13,6 +13,7 @@ import { haptic } from '../platform/native.js';
 import { collide, fine, float, hurt, inCone, pushOut, spawnScroll } from './entities.js';
 import { phaseDone } from './run.js';
 import { dameTouch, updateTicker, updateWagon } from './wagon.js';
+import { gatesPending, updateGates } from './gates.js';
 
 const randLine = key => { const a = tr(key); return a[Math.floor(Math.random() * a.length)]; };
 
@@ -23,6 +24,7 @@ export function update(dt) {
   // Défilement (s'arrête quand l'arrivée est en vue)
   let S = P.S;
   if (P.finish && P.finish.y >= 120) S = 0;
+  if (gatesPending()) S = 0;   // on ne défile qu'une fois les tourniquets passés
   if (!wagon) { P.prog += S * dt; P.scroll = (P.scroll + S * dt) % 768; }
 
   // Joueur : clavier ou doigt
@@ -51,7 +53,7 @@ export function update(dt) {
   pl.x = clamp(pl.x, minX, maxX); pl.y = clamp(pl.y, HUD + 16, H - 32);
   P.solids.forEach(s => pushOut(pl, s));
 
-  if (!wagon) spawnScroll(dt); else updateWagon(dt);
+  if (!wagon) { updateGates(dt); spawnScroll(dt); } else updateWagon(dt);
   if (game.state !== 'play') return;
 
   // Comportements des personnages

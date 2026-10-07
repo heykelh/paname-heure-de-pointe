@@ -5,6 +5,7 @@ import { T } from '../data/characters.js';
 import { DSHORT, LINES } from '../data/network.js';
 import { input } from '../input.js';
 import { tr } from '../i18n/i18n.js';
+import { CFG } from '../config.js';
 import { DOORS } from '../game/wagon.js';
 import { B, ENAMEL, F8, SP, drawEnt, faience } from './sprites.js';
 
@@ -13,12 +14,35 @@ import { B, ENAMEL, F8, SP, drawEnt, faience } from './sprites.js';
 //  agrandi sans lissage (CSS image-rendering: pixelated).
 //  Les positions du jeu sont en unités logiques (360×640) : B(x) = x / 2.
 // ============================================================
+// Texte pixel net : la police est dessinée une fois, puis « binarisée » (pixels pleins ou vides,
+// sans l'anti-crénelage du navigateur qui rendait le HUD légèrement flou). Résultats mis en cache.
+const GLYPHS = new Map();
+function crisp(s, col) {
+  const key = col + '|' + s;
+  let c = GLYPHS.get(key);
+  if (c) return c;
+  if (GLYPHS.size > 400) GLYPHS.clear();
+  ctx.font = F8;
+  const w = Math.max(1, Math.ceil(ctx.measureText(s).width) + 1), h = 9;
+  c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.font = F8; g.textBaseline = 'top'; g.fillStyle = '#fff'; g.fillText(s, 0, 0);
+  const img = g.getImageData(0, 0, w, h), d = img.data;
+  const r = parseInt(col.slice(1, 3), 16), gg = parseInt(col.slice(3, 5), 16), b = parseInt(col.slice(5, 7), 16);
+  for (let i = 0; i < d.length; i += 4) { const on = d[i + 3] > 100; d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = on ? 255 : 0; }
+  g.putImageData(img, 0, 0);
+  GLYPHS.set(key, c);
+  return c;
+}
+export function textWidth(s) { return crisp(s, '#FFFFFF').width - 1; }
+// Texte avec une ombre noire d'un pixel. align : 'left' | 'center'
 export function txt(s, x, y, col = '#F8F8F8', align = 'left') {
-  ctx.font = F8; ctx.textBaseline = 'top'; ctx.textAlign = align;
-  ctx.fillStyle = '#000'; ctx.fillText(s, x + 1, y + 1); ctx.fillStyle = col; ctx.fillText(s, x, y);
+  const c = crisp(s, col), sh = crisp(s, '#000000');
+  const x0 = Math.round(align === 'center' ? x - (c.width - 1) / 2 : x), y0 = Math.round(y);
+  ctx.drawImage(sh, x0 + 1, y0 + 1); ctx.drawImage(c, x0, y0);
 }
 export function box(x, y, w, h, bg = ENAMEL) { ctx.fillStyle = '#F8F8F8'; ctx.fillRect(x, y, w, h); ctx.fillStyle = bg; ctx.fillRect(x + 1, y + 1, w - 2, h - 2); }
-export function plaque(text, cx, y) { ctx.font = F8; const w = Math.ceil(ctx.measureText(text).width) + 10; ctx.fillStyle = '#000'; ctx.fillRect(Math.round(cx - w / 2) - 1, y - 1, w + 2, 16); box(Math.round(cx - w / 2), y, w, 14); txt(text, cx, y + 4, '#F8F8F8', 'center'); }
+export function plaque(text, cx, y) { const w = textWidth(text) + 10; ctx.fillStyle = '#000'; ctx.fillRect(Math.round(cx - w / 2) - 1, y - 1, w + 2, 16); box(Math.round(cx - w / 2), y, w, 14); txt(text, cx, y + 4, '#F8F8F8', 'center'); }
 export function wrap(s, n) { const out = []; let cur = ''; for (const w of s.split(' ')) { if ((cur + ' ' + w).trim().length > n) { if (cur) out.push(cur); cur = w; } else cur = (cur + ' ' + w).trim(); } if (cur) out.push(cur); return out; }
 export function drawBG() { const y = Math.floor(game.phase.scroll / 2) % 384; ctx.drawImage(game.BGC, 0, y - 384); ctx.drawImage(game.BGC, 0, y); }
 
@@ -70,13 +94,26 @@ export function drawSolids() {
       ctx.fillStyle = '#000'; ctx.fillRect(x, y, w, h);
       ctx.fillStyle = '#7C8088'; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
       ctx.fillStyle = '#B8BCC4'; ctx.fillRect(x + 1, y + 1, w - 2, 2);
-      if (x + w < 166) {
+      if (s.gap) {
+        const gw = B(s.gap.w), open = s.gap.open > 0;
+        // lecteur Navigo (violet) + voyant : vert quand ça s'ouvre, rouge si le passage est bloqué
         ctx.fillStyle = '#8C4FBF'; ctx.fillRect(x + w - 6, y + 4, 4, 3);
-        ctx.fillStyle = Math.floor(game.phase.t * 2) % 2 ? '#3AD86A' : '#1A8A3A'; ctx.fillRect(x + w - 9, y + 4, 2, 2);
-        ctx.fillStyle = '#000'; ctx.fillRect(x + w, y + 3, 9, 4); ctx.fillStyle = '#B8BCC4'; ctx.fillRect(x + w, y + 4, 8, 2);
+        ctx.fillStyle = open ? '#3AD86A' : s.gap.blocked ? (Math.floor(game.phase.t * 4) % 2 ? '#E83A2A' : '#7A1A10') : '#1A8A3A';
+        ctx.fillRect(x + w - 9, y + 4, 2, 2);
+        ctx.fillStyle = '#000';
+        if (open) {            // le bras pivote : il se replie le long du tourniquet
+          const k = Math.min(1, s.gap.open * 3), len = Math.round(9 - 6 * k);
+          ctx.fillRect(x + w, y + 3 - Math.round(4 * k), len, 4); ctx.fillStyle = '#B8BCC4'; ctx.fillRect(x + w, y + 4 - Math.round(4 * k), len - 1, 2);
+        } else if (s.gap.blocked) { // sans Navigo : bras fermé sur toute la largeur
+          ctx.fillRect(x + w, y + 3, gw, 4); ctx.fillStyle = '#B8BCC4'; ctx.fillRect(x + w, y + 4, gw, 2);
+          ctx.fillStyle = '#E83A2A'; ctx.fillRect(x + w + Math.floor(gw / 2) - 1, y + 4, 2, 2);
+        } else {
+          ctx.fillRect(x + w, y + 3, 9, 4); ctx.fillStyle = '#B8BCC4'; ctx.fillRect(x + w, y + 4, 8, 2);
+        }
       }
       continue;
     }
+    if (s.kind === 'arm') continue; // bras fermé : déjà dessiné avec son tourniquet
     ctx.fillStyle = '#000'; ctx.fillRect(x, y, w, h);
     ctx.fillStyle = '#5A5E66'; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
     ctx.fillStyle = '#A8D8E8'; ctx.fillRect(x + 3, y + 2, w - 6, h - 4);
@@ -135,7 +172,8 @@ export function drawWagon() {
 export function drawPlayer() {
   const pl = game.phase.pl;
   if (pl.inv > 0 && Math.floor(pl.inv * 20) % 2) return;
-  const x = B(pl.x), y = B(pl.y);
+  const x = B(pl.x), y = B(pl.y - (pl.jumpH || 0));
+  if (pl.jumpH) { ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(x - 4, B(pl.y) + 5, 8, 2); } // ombre au sol pendant le saut
   const moving = !pl.seat && (input.tgt || Object.values(input.keys).some(Boolean));
   const f = moving ? Math.floor(game.phase.t * 8) % 2 : 0;
   if (pl.boost > 0) { ctx.fillStyle = '#58D854'; for (let i = 0; i < 3; i++) ctx.fillRect(x - 4 + i * 4, y + 7 + ((Math.floor(game.phase.t * 12) + i) % 3), 1, 3); }
@@ -147,22 +185,20 @@ export function drawPlayer() {
   if (game.phase.t < 2.5 && game.state === 'play') { txt('1P', x, y - 22, '#F8F8F8', 'center'); ctx.fillStyle = '#F8F8F8'; ctx.fillRect(x - 1, y - 13, 3, 1); ctx.fillRect(x, y - 12, 1, 1); }
 }
 export function drawFloats() {
-  ctx.font = F8; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
   for (const f of game.phase.floats) {
     if (f.t > 1.25 && Math.floor(f.t * 16) % 2) continue;
     const lines = [f.text].concat(f.sub ? wrap(f.sub, 19) : []);
-    const w = Math.ceil(Math.max(...lines.map(l => ctx.measureText(l).width))) + 7, h = lines.length * 10 + 4;
+    const w = Math.max(...lines.map(textWidth)) + 7, h = lines.length * 10 + 4;
     const x = clamp(B(f.x) - Math.floor(w / 2), 2, 178 - w), y = clamp(Math.round(B(f.y) - f.t * 10) - h, 25, 296);
     box(x, y, w, h);
-    lines.forEach((l, i) => { ctx.fillStyle = i === 0 ? f.col : '#F8F8F8'; ctx.fillText(l, x + 4, y + 3 + i * 10); });
+    lines.forEach((l, i) => ctx.drawImage(crisp(l, i === 0 ? f.col : '#F8F8F8'), x + 4, y + 3 + i * 10));
   }
 }
 export function drawTicker() {
   ctx.fillStyle = '#000'; ctx.fillRect(0, 310, 180, 10);
   ctx.fillStyle = '#3A2A00'; for (let x = 0; x < 180; x += 2) ctx.fillRect(x, 311, 1, 8);
   ctx.save(); ctx.beginPath(); ctx.rect(0, 310, 180, 10); ctx.clip();
-  ctx.font = F8; ctx.textBaseline = 'top'; ctx.textAlign = 'left'; ctx.fillStyle = '#FFB000';
-  const tk = game.phase.tick; if (tk) { tk.w = ctx.measureText(tk.msg).width; ctx.fillText(tk.msg, Math.round(tk.x), 311); }
+  const tk = game.phase.tick; if (tk) { const c = crisp(tk.msg, '#FFB000'); tk.w = c.width; ctx.drawImage(c, Math.round(tk.x), 311); }
   ctx.restore();
 }
 export function drawHUD() {
@@ -187,6 +223,16 @@ export function drawHUD() {
   ctx.fillStyle = '#F8F8F8'; ctx.fillRect(123, 2, 19, 19); ctx.fillStyle = LINES[L].c; ctx.fillRect(125, 4, 15, 15);
   txt(L, 129, 8, LINES[L].ink);
 }
+// Sans Navigo : « TAPOTEZ VITE ! » + jauge d'appuis + temps restant
+function drawQTE() {
+  const q = game.phase.qte; if (!q) return;
+  const cx = 90, y = B(q.gap.y) - 30;
+  box(cx - 56, y, 112, 26);
+  txt(tr('qte.title'), cx, y + 4, Math.floor(game.phase.t * 6) % 2 ? '#F8D878' : '#F8F8F8', 'center');
+  const n = CFG.jump.taps;
+  for (let i = 0; i < n; i++) { ctx.fillStyle = i < q.taps ? '#3AD86A' : '#3A4A80'; ctx.fillRect(cx - n * 5 + i * 10 + 1, y + 14, 8, 4); }
+  ctx.fillStyle = '#E83A2A'; ctx.fillRect(cx - 50, y + 21, Math.round(100 * Math.max(0, q.t) / CFG.jump.time), 2);
+}
 export function render() {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
   if (!game.phase) return;
@@ -203,8 +249,8 @@ export function render() {
     drawEnt(ctx, e, e.t);
   }
   if (game.phase.pl) drawPlayer();
+  drawQTE();
   drawFloats();
   ctx.restore();
   if (game.run && game.phase.kind) { drawTicker(); drawHUD(); }
 }
-

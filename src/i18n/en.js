@@ -1,7 +1,7 @@
 // English texts. Keep the same keys as fr.js.
 export default {
   'title.sub': 'RUSH HOUR',
-  'menu.play': 'Play', 'menu.people': 'Metro people', 'menu.options': 'Options', 'menu.quit': 'Quit', 'menu.version': 'DEMO V0.6',
+  'menu.play': 'Play', 'menu.people': 'Metro people', 'menu.options': 'Options', 'menu.quit': 'Quit', 'menu.version': 'DEMO V0.8',
   'common.back': 'Back', 'common.backMenu': 'Back to menu', 'common.mainMenu': 'Main menu', 'common.yes': 'Yes', 'common.no': 'No', 'common.go': 'Let\'s go',
   'quit.toast': 'In the mobile app, this button closes the game.',
 
@@ -28,7 +28,9 @@ export default {
   'ph1.title': 'Phase 1 — reach the platform', 'ph1.corrTitle': 'Change at {s}',
   'ph1.text': 'Platform towards {d}. ', 'ph1.corrText': 'RER {l}, towards {d}. ',
   'ph1.chatelet': 'Allow for 12 km of corridors and at least one accordion. ', 'ph1.signs': 'Follow the signs. Or the crowd. ',
-  'ph1.core': 'Dodge the crowd, grab the coins, never make eye contact.', 'ph1.sans': ' No Navigo: especially not with inspectors.',
+  'ph1.core': 'Dodge the crowd, grab the coins, never make eye contact.', 'ph1.sans': ' No Navigo: tap fast to jump the turnstile, and avoid the inspectors\' eyes.',
+  'qte.title': 'TAP FAST!', 'qte.fail': 'Stuck in the turnstile!', 'fraud.float': 'Fare dodger!',
+  'fraud.msg': 'Look at the fare dodger! Cheapskate! ... Ladies and gentlemen, a passenger just jumped a turnstile. Everybody saw it.',
   'ph2.title': 'Phase 2 — survive the carriage',
   'ph2.text': 'Rush hour: it\'s packed. Free seats blink. A folding seat recharges less… and people judge you. Mind the braking. Trip: {n} stop(s).',
   'ph3.title': 'Phase 3 — find the exit',

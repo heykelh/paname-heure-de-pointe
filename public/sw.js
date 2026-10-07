@@ -1,6 +1,6 @@
 // Service worker : met le jeu en cache pour qu'il marche hors ligne (version web/PWA).
 // Changez CACHE à chaque mise en ligne pour forcer la mise à jour.
-const CACHE = 'phdp-v0.7.0';
+const CACHE = 'phdp-v0.8.0';
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html']))); });
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {

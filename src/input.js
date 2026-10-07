@@ -6,6 +6,7 @@ import { cv, stage } from './core/canvas.js';
 import { game } from './core/state.js';
 import { $, H, W } from './core/utils.js';
 import { pause, resume } from './game/run.js';
+import { tapGate } from './game/gates.js';
 
 export const input = { drag: false, off: { x: 0, y: 0 }, tgt: null, keys: {} };
 
@@ -25,6 +26,7 @@ export function initInput() {
   cv.addEventListener('pointerdown', e => {
     Snd.init();
     if (!game.run || game.state !== 'play') return;
+    tapGate();   // sans Navigo : chaque appui compte pour sauter le tourniquet
     const p = toLogical(e), pl = game.phase.pl;
     input.drag = true; input.off = { x: pl.x - p.x, y: pl.y - p.y }; input.tgt = { x: pl.x, y: pl.y };
     try { cv.setPointerCapture(e.pointerId); } catch (_) {}
@@ -33,6 +35,7 @@ export function initInput() {
   cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
   addEventListener('keydown', e => {
     const k = e.key.toLowerCase(); input.keys[k] = true;
+    if ((k === ' ' || k === 'enter') && !e.repeat && game.state === 'play') { tapGate(); e.preventDefault(); }
     if ((k === 'p' || k === 'escape') && game.run) { if (game.state === 'play') pause(); else if (game.state === 'pause') resume(); }
     if (k.startsWith('arrow') && game.state === 'play') e.preventDefault();
   });

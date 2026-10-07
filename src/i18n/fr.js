@@ -2,7 +2,7 @@
 // Les {variables} entre accolades sont remplacées automatiquement.
 export default {
   'title.sub': 'HEURE DE POINTE',
-  'menu.play': 'Jouer', 'menu.people': 'Les gens du métro', 'menu.options': 'Options', 'menu.quit': 'Quitter', 'menu.version': 'DÉMO V0.7',
+  'menu.play': 'Jouer', 'menu.people': 'Les gens du métro', 'menu.options': 'Options', 'menu.quit': 'Quitter', 'menu.version': 'DÉMO V0.8',
   'common.back': 'Retour', 'common.backMenu': 'Retour au menu', 'common.mainMenu': 'Menu principal', 'common.yes': 'Oui', 'common.no': 'Non', 'common.go': 'C\'est parti',
   'quit.toast': 'Dans l\'application mobile, ce bouton ferme le jeu.',
 
@@ -21,7 +21,7 @@ export default {
   'itin.corr': 'Correspondance à {s}', 'itin.corrSub': 'RER {a} > RER {b} : on recommence la phase 1.',
   'itin.dir': 'Direction {d}, {n} station(s)', 'itin.exit': 'Sortie à {s}',
   'itin.exitSans': 'Sans Navigo : contrôleurs aux portiques.', 'itin.exitNavigo': 'Avec Navigo : sortie libre, la foule en plus.',
-  
+
   'story.title': 'Synopsis', 'story.time': '{h}h{m}',
   'story': ['{t}. Rendez-vous crucial à {to}. Départ : {from}. Entre vous et votre destin : la foule, les couloirs, et ce monsieur qui sent fort. Gardez votre sérénité.',
             '{t}. Le réveil n\'a pas sonné. Direction {to}, depuis {from}. Douze millions de Franciliens ont eu la même idée. Une seule règle : ne jamais craquer.',
@@ -29,7 +29,9 @@ export default {
   'ph1.title': 'Phase 1 — rejoindre le quai', 'ph1.corrTitle': 'Correspondance à {s}',
   'ph1.text': 'Quai direction {d}. ', 'ph1.corrText': 'RER {l}, direction {d}. ',
   'ph1.chatelet': 'Comptez 12 km de couloirs et au moins un accordéon. ', 'ph1.signs': 'Suivez les panneaux. Ou la foule. ',
-  'ph1.core': 'Esquivez la foule, ramassez les pièces, ne croisez aucun regard.', 'ph1.sans': ' Pas de Navigo : évitez celui des contrôleurs.',
+  'ph1.core': 'Esquivez la foule, ramassez les pièces, ne croisez aucun regard.', 'ph1.sans': ' Pas de Navigo : tapotez vite l\'écran pour sauter le tourniquet, et évitez le regard des contrôleurs.',
+  'qte.title': 'TAPOTEZ VITE !', 'qte.fail': 'Coincé dans le tourniquet !', 'fraud.float': 'Fraude !',
+  'fraud.msg': 'Oh le fraudeur ! Sale pauvre ! ... Mesdames et messieurs, un voyageur vient de sauter un tourniquet. Tout le monde l\'a vu.',
   'ph2.title': 'Phase 2 — survivre au wagon',
   'ph2.text': 'Heure de pointe : c\'est serré. Les places libres clignotent. Un strapontin recharge moins… et on vous juge. Attention aux freinages. Trajet : {n} station(s).',
   'ph3.title': 'Phase 3 — atteindre la sortie',

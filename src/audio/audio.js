@@ -157,6 +157,10 @@ export const Snd = {
       case 'pause': this.tone(660, .08, { vol: .07 }); this.tone(440, .12, { vol: .07, at: .08 }); break;
       case 'unpause': this.tone(440, .08, { vol: .07 }); this.tone(660, .12, { vol: .07, at: .08 }); break;
       case 'aura': this.acc(rand(300, 420), .5, 0, .02); break;
+      case 'navigo': this.tone(1760, .07, { type: 'sine', vol: .14 }); this.tone(2349, .14, { type: 'sine', vol: .14, at: .08 }); break;   // bip de validation
+      case 'turnstile': this.noise(.05, { f: 2500, q: 3, vol: .25 }); this.tone(110, .12, { type: 'square', vol: .1, slide: 70, lp: 500, at: .03 }); this.noise(.08, { ftype: 'lowpass', f: 300, vol: .25, brown: true, at: .05 }); break; // clac du bras
+      case 'jump': this.tone(260, .28, { vol: .07, slide: 900 }); this.tone(520, .2, { vol: .03, slide: 1400, at: .05 }); break;   // « boïng » du saut
+      case 'crowdOh': for (let i = 0; i < 4; i++) this.tone(rand(230, 330), .7, { type: 'sawtooth', vol: .025, slide: rand(160, 200), lp: 900, attack: .08, at: .15 + i * .03 }); this.noise(.6, { f: 700, q: .8, vol: .08, at: .15, attack: .1 }); break; // « ohhh ! » de la foule
     }
   },
   // « tchiiip » : petit claquement de langue, puis l'air aspiré entre les dents

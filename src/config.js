@@ -15,6 +15,7 @@ export const CFG = {
   pardon: { duration: 8 },                            // étoile d'invincibilité
 
   // Mode sans Navigo
+  jump: { taps: 6, time: 2.5, failDmg: 4 },  // sauter les tourniquets : nb d'appuis, temps imparti (s), dégâts si raté
   fine: 10,                 // amende en pièces
   sansNavigoHeroBonus: 2,
 
