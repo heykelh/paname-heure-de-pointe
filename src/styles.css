@@ -114,9 +114,10 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--yellow);ou
 /* Fenêtres de dialogue */
 .overlay{background:rgba(0,0,0,.35);justify-content:flex-end;padding:14px}
 .overlay .box h3{margin:0 0 10px;font-size:12px;line-height:1.5;font-weight:400;color:var(--yellow);text-transform:uppercase}
-.overlay .box p{margin:0 0 14px;font-size:10px;line-height:1.8}
+.overlay .box p{margin:0 0 14px;font-size:10px;line-height:1.8;white-space:pre-line}
 #s-pause{justify-content:center}
-#pauseBtn{position:absolute;top:4px;right:4px;width:34px;height:30px;border:0;background:var(--panel);color:#fff;font-size:10px;box-shadow:inset 0 0 0 2px #fff;display:none;z-index:5}
+/* bouton pause : en bas à gauche, sur le mur carrelé (le HUD du haut reste dégagé pour les notifications) */
+#pauseBtn{position:absolute;left:0;bottom:3.2%;width:9%;height:5.5%;min-width:26px;min-height:26px;border:0;padding:0;background:var(--panel);color:#fff;font-size:9px;box-shadow:inset 0 0 0 2px #fff;display:none;z-index:5;opacity:.85}
 #pauseBtn.on{display:block}
 
 /* Fins */
@@ -142,3 +143,39 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--yellow);ou
 .langbtn[aria-pressed="true"]{color:#000;background:var(--yellow);box-shadow:inset 0 0 0 3px var(--w)}
 #optLang{display:flex}
 [hidden]{display:none !important}
+
+/* ---------- v1.0 ---------- */
+/* Choix du mode : 4 cartes colorées */
+.choice small{display:block;margin-top:8px;font-size:8px;color:var(--yellow)}
+.choice.m-navigo{box-shadow:inset 0 0 0 3px var(--lime)}
+.choice.m-sans{box-shadow:inset 0 0 0 3px var(--red)}.choice.m-sans b{color:var(--salmon)}
+.choice.m-greve{box-shadow:inset 0 0 0 3px #F07D19;background:#2A1A10}.choice.m-greve b{color:#F07D19}
+.choice.m-pandemie{box-shadow:inset 0 0 0 3px #8CB070;background:#14240F}.choice.m-pandemie b{color:#B8F818}
+#s-diff .stack{gap:8px}
+#s-diff .choice{padding:12px 14px}
+/* Événement du jour */
+.box.event{box-shadow:inset 0 0 0 3px var(--yellow)}
+.box.event .mode{font-size:8px;color:var(--g2);text-transform:uppercase;margin-bottom:6px}
+.box.event b{display:block;font-weight:400;font-size:11px;color:var(--yellow);margin-bottom:6px}
+.box.event p{margin:0;font-size:9px;line-height:1.7}
+/* Game over */
+.ovs{color:var(--g2);font-size:9px !important}
+/* Fin de course : titre drôle, note, score */
+.titlecard{display:flex;gap:12px;align-items:center;margin:4px 0 12px;padding:10px;background:#0E1530;box-shadow:inset 0 0 0 2px var(--yellow)}
+.grade{flex:none;width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:30px;background:#000;box-shadow:inset 0 0 0 3px var(--w);color:var(--w);animation:pop .5s steps(4) 1.2s both}
+.grade[data-g="S"]{color:#F8D878}.grade[data-g="A"]{color:#58D854}.grade[data-g="B"]{color:#7FE0F8}.grade[data-g="C"]{color:#F8A050}.grade[data-g="D"]{color:#F87858}
+@keyframes pop{0%{transform:scale(3);opacity:0}100%{transform:scale(1);opacity:1}}
+.titlecard .tt b{display:block;font-weight:400;font-size:11px;line-height:1.5;color:var(--yellow)}
+.titlecard .tt small{display:block;font-size:8px;line-height:1.7;color:var(--w);margin-top:4px}
+.score{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:9px;color:var(--g2);text-transform:uppercase}
+.score b{font-weight:400;font-size:14px;color:var(--w)}
+.score em{font-style:normal;font-size:8px;color:var(--g2)}
+.score em.new{color:#F878F8;animation:blink .6s steps(2,start) infinite}
+.badges{margin-top:12px}
+.badges .bh{font-size:8px;color:var(--g2);text-transform:uppercase;margin-bottom:4px}
+.bdg{padding:6px 0;border-top:2px dashed #3C3C3C}
+.bdg b{display:block;font-weight:400;font-size:9px;color:var(--lime)}
+.bdg small{display:block;font-size:8px;line-height:1.6}
+#s-win{justify-content:flex-start;padding-top:22px}
+.ticket dl{font-size:8px}
+@media (prefers-reduced-motion: reduce){ .grade,.score em.new{animation:none} }

@@ -1,6 +1,6 @@
 {
   "name": "paname-heure-de-pointe",
-  "version": "0.7.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Paname Heure de Pointe — jeu rétro sur les heures de pointe du RER parisien",

@@ -20,7 +20,7 @@
 
   <section class="screen on" id="s-title">
     <div class="top bricks">
-      <div class="logo"><div class="l1">PANAME</div><div class="l2" data-i18n="title.sub"></div></div>
+      <div class="logo"><div class="l1" id="logoL1">PANAME</div><div class="l2" data-i18n="title.sub"></div></div>
     </div>
     <div class="ledge blocks"></div>
     <div class="menu stack">
@@ -67,17 +67,15 @@
 
   <section class="screen page" id="s-diff">
     <h2 data-i18n="diff.title"></h2>
-    <div class="stack">
-      <button class="choice" data-mode="navigo"><b data-i18n="diff.navigo"></b><span data-i18n="diff.navigoD"></span></button>
-      <button class="choice hard" data-mode="sans"><b data-i18n="diff.sans"></b><span id="diffSans" data-i18n="diff.sansD"></span></button>
-    </div>
+    <div class="stack" id="modeList"></div>
     <div class="foot"><button class="btn quiet" data-go="select" data-i18n="diff.change"></button></div>
   </section>
 
   <section class="screen page" id="s-gen">
     <h2 data-i18n="gen.title"></h2>
     <div class="box"><ul class="itin" id="itin"></ul></div>
-    <div class="foot stack"><button class="btn go" id="startRun" data-i18n="gen.start"></button><button class="btn quiet" data-go="select" data-i18n="diff.change"></button></div>
+    <div class="box event"><div class="mode" id="genMode"></div><b id="genEvent"></b><p id="genEventP"></p></div>
+    <div class="foot stack"><button class="btn go" id="startRun" data-i18n="gen.start"></button><button class="btn quiet" id="genBack" data-i18n="gen.mode"></button><button class="btn quiet" data-go="select" data-i18n="diff.change"></button></div>
   </section>
 
   <section class="screen overlay" id="s-banner">
@@ -93,6 +91,7 @@
     <div class="go-title">GAME<br>OVER</div>
     <h2 id="ovT"></h2>
     <p id="ovP"></p>
+    <p id="ovS" class="ovs"></p>
     <div class="foot stack"><button class="btn go" id="retryBtn" data-i18n="over.retry"></button><button class="btn quiet" data-go="title" data-i18n="common.mainMenu"></button></div>
   </section>
 
@@ -101,7 +100,10 @@
       <div class="stamp" id="wStamp"></div>
       <div class="kicker" data-i18n="win.kicker"></div>
       <h2 id="wT"></h2>
+      <div class="titlecard"><div class="grade" id="wGrade"></div><div class="tt"><b id="wTitle"></b><small id="wWhy"></small></div></div>
+      <div class="score"><span data-i18n="win.score"></span><b id="wScore"></b><em id="wRecord"></em></div>
       <dl id="wStats"></dl>
+      <div class="badges" id="wBadges"></div>
     </div>
     <div class="stack">
       <button class="btn go" id="shareBtn" data-i18n="win.share"></button>

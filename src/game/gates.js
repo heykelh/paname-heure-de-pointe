@@ -7,12 +7,13 @@
 import { Snd } from '../audio/audio.js';
 import { CFG } from '../config.js';
 import { game } from '../core/state.js';
-import { tr } from '../i18n/i18n.js';
+import { tr, trPair } from '../i18n/i18n.js';
 import { haptic } from '../platform/native.js';
-import { float, hurt } from './entities.js';
+import { hurt, modeOf } from './entities.js';
+import { notify } from './notify.js';
 
 // Crée la rangée de tourniquets (appelée au début de la phase 1)
-export function buildGates(y, sans) {
+export function buildGates(y, sans) {   // sans = true : bras fermés (mode sans Navigo)
   const P = game.phase;
   const bodies = [[24, 62], [112, 160], [210, 258], [308, 336]];
   bodies.forEach(([a, b], i) => {
@@ -48,7 +49,7 @@ export function updateGates(dt) {
     if (g) { g.gap.open = .6; Snd.play('turnstile'); }
     return;
   }
-  if (run.mode !== 'sans') {
+  if (!modeOf().jump) {
     // avec Navigo : bip de validation à l'approche, le bras s'ouvre
     if (g && below < 26 && !g.gap.beeped) { g.gap.beeped = true; g.gap.open = .8; Snd.play('navigo'); haptic('light'); }
     return;
@@ -61,7 +62,8 @@ export function updateGates(dt) {
   if (P.qte.taps >= CFG.jump.taps) return startJump(g, rowY);
   if (P.qte.t <= 0) {
     hurt(CFG.jump.failDmg); Snd.play('glare'); haptic('medium');
-    float(pl.x, pl.y - 26, tr('qte.fail'), null, 'red');
+    const [t, sub] = trPair('n.qteFail');
+    notify(t, sub, { icon: 'ticket', col: 'red', key: 'qte', pop: { x: pl.x, y: pl.y - 28, text: '-' + CFG.jump.failDmg, col: 'red' } });
     P.qte = { taps: 0, t: CFG.jump.time, gap: g };
   }
 }
@@ -74,9 +76,10 @@ function startJump(g, rowY) {
   pl.x = g.x + g.w + g.gap.w / 2;
   P.jump = { t: 0, y0: pl.y, y1: rowY - 20 };
   Snd.play('jump'); Snd.play('crowdOh'); haptic('medium');
-  float(pl.x, pl.y - 30, tr('fraud.float'), null, 'red');
+  const [t, sub] = trPair('n.fraud');
+  notify(t, sub, { icon: 'ticket', col: 'red', pop: { x: pl.x, y: pl.y - 32, text: t, col: 'red' } });
   P.tick = { msg: tr('fraud.msg'), x: 182, w: 999 };   // message en bas de l'écran
-  game.run.frauds = (game.run.frauds || 0) + 1;
+  game.run.st.frauds++;
 }
 
 function updateJump(dt) {

@@ -4,8 +4,8 @@
 //  Trois bus indépendants : musique, bruitages, ambiance.
 //  - play(nom)       : bruitage ponctuel (voir la liste plus bas)
 //  - hit(type)       : collision avec un personnage (son « signature »)
-//  - music(piste)    : change la musique ('menu', 'corridor', 'wagon', 'exit', 'none')
-//  - override(piste, s) : musique temporaire (ex. 'star' pendant le Pardon)
+//  - music(piste)    : change la musique ('menu', 'corridor', 'wagon', 'exit', 'greve', 'pandemie', 'none')
+//  - override(piste, s) : musique temporaire (ex. 'star' pendant le Pardon, 'aura' pendant la bulle)
 //  - ambience(mode)  : fond sonore ('menu', 'corridor', 'wagon', 'none')
 //  - frame(dt, ctx)  : appelé à chaque image, adapte l'ambiance à la situation
 // ============================================================
@@ -13,11 +13,12 @@ import { store } from '../core/storage.js';
 import { TRACKS } from './tracks.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
+const KICK_SFX = s => s.tone(120, .14, { type: 'sine', vol: .3, slide: 45, at: .45 });
 
 export const Snd = {
   ac: null,
   on: { music: store.get('music', true), sfx: store.get('sfx', true), amb: store.get('amb', true) },
-  trackName: 'menu', ovr: null, paused: false, mode: 'none', samples: {}, fileMusic: null,
+  trackName: 'menu', ovr: null, paused: false, mode: 'none', samples: {}, vols: {}, fileMusic: null,
   _step: 0, _next: 0, _timer: null,
   st: { stepT: 0, beatT: 0, clackT: 0, trainT: 8, tenseT: 0, crowd: 0 },
 
@@ -57,27 +58,34 @@ export const Snd = {
 
   /* ---------- tes propres fichiers audio (optionnels) ----------
      1. Mets le fichier dans public/sounds/ (mp3 conseillé : lu partout, iPhone compris).
-     2. Ajoute son nom dans public/sounds/index.json, par ex. ["hit-tchipeur", "music-menu"].
+     2. Déclare-le dans public/sounds/index.json, avec son volume (1 = normal, 0.5 = moitié, 2 = double) :
+          { "hit-tchipeur": 1, "coo": 0.6, "music-menu": 0.8 }
+        (l'ancienne forme en liste ["hit-tchipeur", "coo"] marche toujours, volume 1)
         Sans extension, le jeu cherche « nom.mp3 » ; tu peux aussi écrire « nom.ogg » ou « nom.wav ».
      Noms reconnus :
        hit-basique, hit-tchipeur, hit-shlagg, hit-frotteur, hit-susu, hit-theologiste, hit-voleur,
-       hit-artiste, hit-enfant, hit-poussette, hit-encombrant, hit-runner, hit-rambarde, hit-debout
+       hit-artiste, hit-enfant, hit-poussette, hit-encombrant, hit-runner, hit-rambarde, hit-debout,
+       hit-manifestant, hit-trottinette, hit-tousseur, hit-zombie
          → collision avec ce personnage. Variantes possibles : hit-tchipeur-2, hit-tchipeur-3…
            (le jeu en tire une au hasard à chaque collision)
-       music-menu, music-corridor, music-wagon, music-exit, music-star
-         → musique en boucle (écran titre, couloirs, wagon, sortie, étoile Pardon)
+       music-menu, music-corridor, music-wagon, music-exit, music-star, music-aura, music-greve, music-pandemie
+         → musique en boucle (écran titre, couloirs, wagon, sortie, Pardon, bulle, couloirs en Grève / Pandémie)
        quai, sortie → arrivée sur le quai / à la sortie
        et tous les bruitages de play() : coin, star, shrink, grow, hero, fine, seat, brake, chime,
-         doorsOpen, doorsClose, navigo, turnstile, jump, crowdOh, win, over…
+         doorsOpen, doorsClose, navigo, turnstile, jump, crowdOh, win, over,
+         auraOn, auraPop, yeet, shiny, rolex, gel, pq, cough, cortege, bell, notify, streak, grade, record, stolen…
      Tout son absent garde sa version synthétisée. */
   async loadSamples() {
     try {
       const r = await fetch('./sounds/index.json', { cache: 'no-cache' });
       if (!r.ok) return;
-      const names = await r.json();
-      await Promise.all(names.map(async entry => {
+      const data = await r.json();
+      // liste ["coo", …] ou objet { "coo": 0.6, … } (nom → volume)
+      const entries = Array.isArray(data) ? data.map(n => [n, 1]) : Object.entries(data);
+      await Promise.all(entries.map(async ([entry, vol]) => {
         const file = /\.(mp3|ogg|wav|m4a)$/i.test(entry) ? entry : entry + '.mp3';
         const name = file.replace(/\.[^.]+$/, '');
+        this.vols[name] = Number(vol) >= 0 ? Number(vol) : 1;
         try {
           const f = await fetch('./sounds/' + file);
           if (f.ok) this.samples[name] = await this.ac.decodeAudioData(await f.arrayBuffer());
@@ -91,10 +99,10 @@ export const Snd = {
     if (!this.ac) return false;
     const variants = [name];
     for (let i = 2; this.samples[name + '-' + i]; i++) variants.push(name + '-' + i);
-    const b = this.samples[variants[Math.floor(Math.random() * variants.length)]];
+    const pick = variants[Math.floor(Math.random() * variants.length)], b = this.samples[pick];
     if (!b) return false;
     const s = this.ac.createBufferSource(), g = this.ac.createGain();
-    s.buffer = b; s.playbackRate.value = rand(.97, 1.03); g.gain.value = vol;
+    s.buffer = b; s.playbackRate.value = rand(.97, 1.03); g.gain.value = vol * (this.vols[pick] ?? 1);
     s.connect(g); g.connect(this.sfxBus); s.start(); return true;
   },
   resume() { if (this.ac && this.ac.state !== 'running') this.ac.resume(); },
@@ -194,6 +202,37 @@ export const Snd = {
       case 'navigo': this.tone(1760, .07, { type: 'sine', vol: .14 }); this.tone(2349, .14, { type: 'sine', vol: .14, at: .08 }); break;   // bip de validation
       case 'turnstile': this.noise(.05, { f: 2500, q: 3, vol: .25 }); this.tone(110, .12, { type: 'square', vol: .1, slide: 70, lp: 500, at: .03 }); this.noise(.08, { ftype: 'lowpass', f: 300, vol: .25, brown: true, at: .05 }); break; // clac du bras
       case 'jump': this.tone(260, .28, { vol: .07, slide: 900 }); this.tone(520, .2, { vol: .03, slide: 1400, at: .05 }); break;   // « boïng » du saut
+      // ---- v1.0 ----
+      case 'notify': this.tone(1568, .04, { vol: .035 }); this.tone(2093, .06, { vol: .03, at: .04 }); break;   // petit « blip » de notification
+      case 'auraOn': // la bulle se gonfle
+        this.tone(220, .5, { type: 'sine', vol: .14, slide: 880 }); this.tone(330, .5, { type: 'triangle', vol: .05, slide: 1320, at: .05 });
+        this.noise(.5, { f: 900, to: 4000, q: 3, vol: .06 }); [1047, 1319, 1568].forEach((f, i) => this.tone(f, .12, { type: 'sine', vol: .06, at: .4 + i * .07 })); break;
+      case 'auraPop': // « boïng » sur la bulle
+        this.tone(180 * r, .3, { type: 'sine', vol: .2, slide: 520, vib: [18, 40] }); this.tone(900 * r, .12, { type: 'triangle', vol: .06, slide: 300, at: .02 }); break;
+      case 'yeet': // le gêneur s'envole : sifflet à coulisse qui descend… puis « pof »
+        this.tone(rand(1500, 1900), .5, { type: 'sine', vol: .09, slide: 260, at: .05 }); this.tone(rand(500, 700), .35, { type: 'square', vol: .03, slide: 1400, lp: 2500 });
+        this.noise(.18, { f: 600, q: .8, vol: .18, at: .5 }); this.noise(.12, { ftype: 'lowpass', f: 300, vol: .2, brown: true, at: .5 }); break;
+      case 'shiny': // jingle scintillant (rareté !)
+        this.duck(.25, 1.6); [1319, 1568, 2093, 2637, 3136, 2637, 3136, 4186].forEach((f, i) => this.tone(f, .12, { type: i % 2 ? 'sine' : 'square', vol: .05, at: i * .06 }));
+        this.noise(.8, { ftype: 'highpass', f: 7000, vol: .05, at: .1 }); this.play('hero'); break;
+      case 'rolex': // « tic-tac » doré + caisse enregistreuse
+        for (let i = 0; i < 4; i++) this.tone(i % 2 ? 2400 : 3200, .02, { vol: .08, at: i * .12 });
+        this.noise(.06, { f: 4000, q: 2, vol: .2, at: .5 }); [1568, 2093].forEach((f, i) => this.tone(f, .3, { type: 'triangle', vol: .12, at: .55 + i * .09 })); break;
+      case 'gel': // « pschhht » + frottement des mains
+        this.noise(.35, { ftype: 'highpass', f: 3000, vol: .18 }); for (let i = 0; i < 4; i++) this.noise(.07, { f: 1200, q: 2, vol: .1, at: .4 + i * .09 });
+        this.tone(784, .2, { type: 'sine', vol: .08, at: .8 }); this.tone(1047, .3, { type: 'sine', vol: .08, at: .9 }); break;
+      case 'pq': // fanfare ridicule pour un rouleau de PQ
+        [523, 523, 523, 698].forEach((f, i) => this.tone(f, i === 3 ? .4 : .1, { type: 'square', vol: .06, at: i * .11 })); this.tone(262, .5, { type: 'triangle', vol: .14, at: .33 }); break;
+      case 'cough': // « keuf keuf »
+        for (let i = 0; i < 2; i++) { this.noise(.16, { f: 700, q: .7, vol: .3, at: i * .22, attack: .01 }); this.tone(180, .1, { type: 'sawtooth', vol: .04, slide: 110, lp: 700, at: i * .22 }); } break;
+      case 'cortege': // sifflet + tambour du cortège
+        this.tone(2600, .35, { type: 'sine', vol: .08, vib: [35, 180] }); this.tone(2600, .2, { type: 'sine', vol: .08, vib: [35, 180], at: .45 });
+        for (let i = 0; i < 6; i++) this.noise(.08, { ftype: 'lowpass', f: 260, vol: .3, brown: true, at: .2 + i * .18 }); break;
+      case 'bell': this.tone(2637, .12, { type: 'sine', vol: .1 }); this.tone(2637, .25, { type: 'sine', vol: .1, at: .14 }); break;   // « dring dring »
+      case 'streak': [784, 988, 1175].forEach((f, i) => this.tone(f, .1, { type: 'triangle', vol: .1, at: i * .07 })); break;
+      case 'stolen': this.tone(392, .15, { type: 'sawtooth', vol: .05, lp: 1400 }); this.tone(330, .35, { type: 'sawtooth', vol: .05, lp: 1400, at: .16, vib: [6, 10] }); break;   // « oh nooon »
+      case 'grade': [392, 523, 659, 784, 1047].forEach((f, i) => this.tone(f, .15, { type: 'square', vol: .06, at: i * .09 })); KICK_SFX(this); break;
+      case 'record': this.duck(.2, 2); [523, 659, 784, 1047, 784, 1047, 1319, 1568].forEach((f, i) => { this.tone(f, .14, { type: 'square', vol: .06, at: i * .1 }); this.tone(f / 2, .14, { type: 'triangle', vol: .12, at: i * .1 }); }); break;
       case 'crowdOh': for (let i = 0; i < 4; i++) this.tone(rand(230, 330), .7, { type: 'sawtooth', vol: .025, slide: rand(160, 200), lp: 900, attack: .08, at: .15 + i * .03 }); this.noise(.6, { f: 700, q: .8, vol: .08, at: .15, attack: .1 }); break; // « ohhh ! » de la foule
     }
   },
@@ -247,6 +286,13 @@ export const Snd = {
         this.tone(300, .3, { vol: .04, slide: 900, at: .05 }); break;
       case 'rambarde': // « boïng » métallique + microbes
         this.tone(220, .5, { type: 'triangle', vol: .14, slide: 440, vib: [14, 25] }); this.tone(1840, .4, { type: 'sine', vol: .05 }); this.noise(.12, { f: 900, q: 3, vol: .1, at: .22 }); break;
+      case 'manifestant': // coup de sifflet + « ho ! »
+        this.tone(2500 * r, .25, { type: 'sine', vol: .09, vib: [40, 200], at: .02 }); this.tone(300 * r, .25, { type: 'sawtooth', vol: .06, slide: 240, lp: 1200, at: .25 }); break;
+      case 'trottinette': // « dring » + crash
+        this.play('bell'); this.noise(.25, { f: 2500, q: .7, vol: .25, at: .3 }); this.tone(900, .3, { type: 'square', vol: .04, slide: 120, at: .3 }); break;
+      case 'tousseur': this.play('cough'); break;
+      case 'zombie': // grognement de zombie
+        this.tone(95 * r, .7, { type: 'sawtooth', vol: .12, slide: 70, vib: [9, 18], lp: 700, at: .03, attack: .08 }); this.noise(.6, { ftype: 'lowpass', f: 500, vol: .2, brown: true, at: .05 }); break;
       case 'debout': // « hmpf »
         this.tone(200 * r, .14, { type: 'triangle', vol: .09, slide: 160 }); this.noise(.08, { ftype: 'lowpass', f: 500, vol: .1 }); break;
       default: this.tone(260 * r, .1, { type: 'triangle', vol: .08, slide: 200, at: .03 });
@@ -267,7 +313,8 @@ export const Snd = {
     if (!buf) return;
     const src = this.ac.createBufferSource(), g = this.ac.createGain();
     src.buffer = buf; src.loop = true;
-    g.gain.setValueAtTime(.0001, t); g.gain.setTargetAtTime(1.6, t, .2);   // 1.6 : compense le volume plus bas du bus musique
+    const v = 1.6 * (this.vols['music-' + name] ?? 1);   // 1.6 : compense le volume plus bas du bus musique
+    g.gain.setValueAtTime(.0001, t); g.gain.setTargetAtTime(Math.max(.0001, v), t, .2);
     src.connect(g); g.connect(this.musicIn); src.start(t);
     this.fileMusic = { name, src, g };
   },

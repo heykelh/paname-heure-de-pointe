@@ -13,6 +13,7 @@ import { initPlatform, isNative } from './platform/native.js';
 import { render } from './render/renderer.js';
 import { F8, buildSprites, cssTiles, dither, makeBG } from './render/sprites.js';
 import { buildMap, goBack, initScreens, show } from './ui/screens.js';
+import { addEnt, spawnKind } from './game/entities.js';
 
 let last = performance.now();
 function loop(now) {
@@ -43,4 +44,5 @@ if (!isNative && 'serviceWorker' in navigator && import.meta.env.PROD) {
 
 // Mode test : ouvrez le jeu avec ?debug à la fin de l'adresse pour manipuler l'état dans la console
 // (ex. game.run.ser = 100, game.phase.prog = game.phase.len pour sauter à la fin d'une phase)
-if (new URLSearchParams(location.search).has('debug')) { window.game = game; window.Snd = Snd; } // ex. Snd.hit('tchipeur'), Snd.play('star')
+// ex. Snd.hit('zombie'), Snd.play('shiny'), dbg.spawn('shlagg_shiny', 180, 200), dbg.spawn('aura', 180, 400)
+if (new URLSearchParams(location.search).has('debug')) { window.game = game; window.Snd = Snd; window.dbg = { add: addEnt, spawn: (k, x, y) => spawnKind(k, x, y) }; }

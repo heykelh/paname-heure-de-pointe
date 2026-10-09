@@ -1,1 +1,11 @@
-["hit-tchipeur", "game-over", "hit-basique", "hit-encombrant", "hit-voleur", "music-corridor", "music-menu", "sortie"]
+{
+    "hit-tchipeur": 1,
+    "game-over": 1,
+    "hit-basique": 1,
+    "hit-encombrant": 1.7,
+    "hit-voleur": 1,
+    "music-corridor": 1,
+    "music-menu": 1,
+    "sortie": 1,
+    "coo": 1.5
+}
